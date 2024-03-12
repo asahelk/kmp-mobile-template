@@ -1,3 +1,6 @@
+import org.jetbrains.kotlin.gradle.dsl.KotlinCompile
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+
 plugins {
     alias(libs.plugins.multiplatform)
     alias(libs.plugins.compose)
@@ -5,9 +8,13 @@ plugins {
     alias(libs.plugins.buildConfig)
     alias(libs.plugins.kotlinx.serialization)
     alias(libs.plugins.sqlDelight)
+    alias(libs.plugins.mokoResources)
+    alias(libs.plugins.ksp)
 }
 
 kotlin {
+    kotlin.applyDefaultHierarchyTemplate()
+
     androidTarget {
         compilations.all {
             kotlinOptions {
@@ -16,16 +23,13 @@ kotlin {
         }
     }
 
-    listOf(
-        iosX64(),
-        iosArm64(),
-        iosSimulatorArm64()
-    ).forEach {
-        it.binaries.framework {
-            baseName = "ComposeApp"
-            isStatic = true
+    val iosTarget: (String, KotlinNativeTarget.() -> Unit) -> KotlinNativeTarget =
+        when {
+            System.getenv("SDK_NAME")?.startsWith("iphoneos") == true -> ::iosArm64
+            System.getenv("NATIVE_ARCH")?.startsWith("arm") == true -> ::iosSimulatorArm64
+            else -> ::iosX64
         }
-    }
+    iosTarget("ios") {}
 
     sourceSets {
         all {
@@ -33,37 +37,71 @@ kotlin {
                 optIn("org.jetbrains.compose.resources.ExperimentalResourceApi")
             }
         }
-        commonMain.dependencies {
-            implementation(compose.runtime)
-            implementation(compose.material3)
-            implementation(compose.materialIconsExtended)
-            @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
-            implementation(compose.components.resources)
-            implementation(libs.voyager.navigator)
-            implementation(libs.composeImageLoader)
-            implementation(libs.napier)
-            implementation(libs.kotlinx.coroutines.core)
-            implementation(libs.moko.mvvm)
-            implementation(libs.ktor.core)
-            implementation(libs.composeIcons.featherIcons)
-            implementation(libs.kotlinx.serialization.json)
-            implementation(libs.kotlinx.datetime)
-            implementation(libs.multiplatformSettings)
-            implementation(libs.koin.core)
-            implementation(libs.kstore)
+        commonMain {
+            kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
+
+            dependencies{
+                implementation(compose.runtime)
+                implementation(compose.foundation)
+                implementation(compose.material3)
+                implementation(compose.materialIconsExtended)
+                @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class) implementation(compose.components.resources)
+
+                implementation(libs.ktor.core)
+                implementation(libs.ktor.client.content.negotiation)
+                implementation(libs.ktor.serialization.kotlinx.json)
+
+                implementation(project.dependencies.platform(libs.koin.bom))
+                implementation(libs.koin.core)
+                implementation(libs.koin.compose)
+
+                implementation(libs.koin.annotations)
+
+                implementation(libs.kamel)
+
+                implementation(libs.voyager.navigator)
+                implementation(libs.voyager.koin)
+
+                implementation(libs.composeImageLoader)
+                implementation(libs.composeIcons.featherIcons)
+
+                implementation(libs.napier)
+                implementation(libs.kotlinx.coroutines.core)
+                implementation(libs.kotlinx.serialization.json)
+                implementation(libs.kotlinx.datetime)
+
+                implementation(libs.multiplatformSettings)
+
+                implementation(libs.kstore)
+
+                implementation(libs.moko.mvvm)
+                implementation(libs.moko.resources.compose)
+            }
         }
 
         commonTest.dependencies {
             implementation(kotlin("test"))
         }
 
-        androidMain.dependencies {
-            implementation(libs.androidx.appcompat)
-            implementation(libs.androidx.activityCompose)
-            implementation(libs.compose.uitooling)
-            implementation(libs.kotlinx.coroutines.android)
-            implementation(libs.ktor.client.okhttp)
-            implementation(libs.sqlDelight.driver.android)
+        androidMain {
+            dependencies{
+                implementation(project.dependencies.platform(libs.compose.bom))
+                implementation(libs.compose.ui)
+                implementation(libs.compose.ui.tooling.preview)
+                implementation(libs.compose.uitooling)
+                implementation(libs.androidx.activityCompose)
+                implementation(libs.androidx.appcompat)
+                implementation(libs.ktor.client.okhttp)
+                implementation(libs.kotlinx.coroutines.android)
+                implementation(libs.sqlDelight.driver.android)
+
+                //Koin
+                implementation(libs.koin.android)
+                implementation(libs.koin.androidx.compose)
+            }
+
+            // Required for moko-resources to work
+            dependsOn(commonMain.get())
         }
 
         iosMain.dependencies {
@@ -71,6 +109,26 @@ kotlin {
             implementation(libs.sqlDelight.driver.native)
         }
 
+    }
+}
+
+dependencies {
+    add("kspCommonMainMetadata", libs.koin.ksp.compiler)
+}
+
+// Ensure all Kotlin compile tasks depend on kspCommonMainKotlinMetadata for prior code processing.
+tasks.withType<KotlinCompile<*>>().configureEach {
+    if (name != "kspCommonMainKotlinMetadata") {
+        dependsOn("kspCommonMainKotlinMetadata")
+    }
+}
+
+// Make all SourcesJar tasks depend on kspCommonMainKotlinMetadata.
+afterEvaluate {
+    tasks.filter { task: Task ->
+        task.name.contains("SourcesJar", true)
+    }.forEach {
+        it.dependsOn("kspCommonMainKotlinMetadata")
     }
 }
 
@@ -100,6 +158,10 @@ android {
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.4"
+    }
+    dependencies {
+//        add("kspAndroid", libs.koin.ksp.compiler)
+        debugImplementation(libs.compose.uitooling)
     }
 }
 
