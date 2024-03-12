@@ -1,4 +1,4 @@
-rootProject.name = "PokeList"
+rootProject.name = "Template"
 include(":composeApp")
 
 pluginManagement {

@@ -1,4 +1,4 @@
-package org.taske.pokelist
+package org.company.template
 
 import platform.Foundation.NSURL
 import platform.UIKit.UIApplication

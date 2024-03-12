@@ -1,4 +1,4 @@
-package org.taske.pokelist
+package org.company.template
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -34,8 +34,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import org.taske.pokelist.theme.AppTheme
-import org.taske.pokelist.theme.LocalThemeIsDark
+import org.company.template.theme.AppTheme
+import org.company.template.theme.LocalThemeIsDark
 
 @Composable
 internal fun App() = AppTheme {

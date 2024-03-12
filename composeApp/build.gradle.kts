@@ -133,14 +133,14 @@ afterEvaluate {
 }
 
 android {
-    namespace = "org.taske.pokelist"
+    namespace = "org.company.template"
     compileSdk = 34
 
     defaultConfig {
         minSdk = 24
         targetSdk = 34
 
-        applicationId = "org.taske.pokelist.androidApp"
+        applicationId = "org.company.template.androidApp"
         versionCode = 1
         versionName = "1.0.0"
     }
@@ -175,7 +175,7 @@ sqldelight {
         create("MyDatabase") {
             // Database configuration here.
             // https://cashapp.github.io/sqldelight
-            packageName.set("org.taske.pokelist.db")
+            packageName.set("org.company.template.db")
         }
     }
 }

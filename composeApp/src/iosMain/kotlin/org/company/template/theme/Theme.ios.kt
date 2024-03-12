@@ -1,4 +1,4 @@
-package org.taske.pokelist.theme
+package org.company.template.theme
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect

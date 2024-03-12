@@ -1,4 +1,4 @@
-package org.taske.pokelist
+package org.company.template
 
 import android.app.Application
 import android.content.Intent

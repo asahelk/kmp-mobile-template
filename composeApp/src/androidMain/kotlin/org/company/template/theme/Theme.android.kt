@@ -1,4 +1,4 @@
-package org.taske.pokelist.theme
+package org.company.template.theme
 
 import android.app.Activity
 import android.graphics.Color
